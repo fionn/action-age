@@ -1,0 +1,56 @@
+name: CI
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+
+  test:
+
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Create test file
+        id: file
+        run: |
+          echo "attack at dawn" > "$test_file"
+          echo "name=$test_file" >> $GITHUB_OUTPUT
+        env:
+          test_file: test.txt
+
+      - name: Hash test file
+        id: hash
+        uses: fionn/action-hash@master
+        with:
+          path: ${{ steps.file.outputs.name }}
+
+      - name: Encrypt test file
+        id: encrypt
+        uses: ./
+        with:
+          path: ${{ steps.file.outputs.name }}
+          verb: encrypt
+          key: ${{ vars.public_key }}
+
+      - name: Decrypt test file
+        id: decrypt
+        uses: ./
+        with:
+          path: ${{ steps.file.outputs.name }}
+          verb: decrypt
+          key: ${{ secrets.private_key }}
+
+      - name: Compare SHA256 of test file
+        run: echo "$hash  $path" | sha256sum -c -
+        shell: bash
+        env:
+          hash: ${{ steps.hash.outputs.sha256 }}
+          path: ${{ steps.decrypt.outputs.path }}

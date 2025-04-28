@@ -1,0 +1,61 @@
+name: Age Action
+description: Encrypt or decrypt with Age
+
+branding:
+  color: white
+  icon: lock
+
+inputs:
+
+  path:
+    description: Path of plaintext file to encrypt or decryption target, assuming the ciphertext path ends in .age
+    required: true
+
+  verb:
+    description: \"encrypt\" or \"decrypt\"
+    required: true
+
+  key:
+    description: Encryption key, public or private depending on the verb
+    required: true
+
+outputs:
+
+  path:
+    description: Path to output file
+    value: ${{ steps.encrypt.outputs.path || steps.decrypt.outputs.path }}
+
+runs:
+
+  using: composite
+  steps:
+
+    - name: Install age
+      run: sudo apt-get -y install age
+      shell: bash
+
+    - name: Encrypt
+      if: inputs.verb == 'encrypt'
+      id: encrypt
+      run: |
+        age --recipient="$public_key" -o "$output_path" "$input_path"
+        rm "$input_path"
+        echo "path=$output_path" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        public_key: ${{ inputs.key }}
+        input_path: ${{ inputs.path }}
+        output_path: ${{ inputs.path }}.age
+
+    - name: Decrypt
+      if: inputs.verb == 'decrypt'
+      id: decrypt
+      run: |
+        age --decrypt --identity=- -o "$output_path" "$input_path" <<< "$private_key"
+        rm "$input_path"
+        echo "path=$output_path" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        private_key: ${{ inputs.key }}
+        input_path: ${{ inputs.path }}.age
+        output_path: ${{ inputs.path }}
