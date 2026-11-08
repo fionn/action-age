@@ -1,5 +1,6 @@
 name: CI
-on: push
+
+on: [push]
 
 permissions:
   contents: read
@@ -14,7 +15,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -28,13 +29,13 @@ jobs:
 
       - name: Hash test file
         id: hash
-        uses: fionn/action-hash@master
+        uses: fionn/action-hash@v0.0.3
         with:
           path: ${{ steps.file.outputs.name }}
 
       - name: Encrypt test file
         id: encrypt
-        uses: ./
+        uses: $/
         with:
           path: ${{ steps.file.outputs.name }}
           verb: encrypt
@@ -42,7 +43,7 @@ jobs:
 
       - name: Decrypt test file
         id: decrypt
-        uses: ./
+        uses: $/
         with:
           path: ${{ steps.file.outputs.name }}
           verb: decrypt
